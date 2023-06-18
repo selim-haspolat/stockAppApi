@@ -103,3 +103,11 @@ class SaleSerializer(FixSerializer):
         products = Product.objects.filter(id=obj.product_id).values()
         category_id= products[0]['category_id']
         return list(Category.objects.filter(id=category_id).values())
+    
+
+# ---------------------------------
+# Extra Serializers
+# ---------------------------------
+# Kategoriye bağlı ürünleri göster (realeted_name):
+class CategoryProductsSerializer(CategorySerializer):
+    category_products = ProductSerializer(many = True)

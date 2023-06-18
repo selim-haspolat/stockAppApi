@@ -60,6 +60,33 @@ class Purchase(FixModel):
 
     def __str__(self):
         return f'{self.product} [+{self.quantity}]'
+    
+    # insert/update:
+    def save(self, *args, **kwargs):
+        # Ürün getir:
+        product = Product.objects.get(id=self.product_id)
+        if (self.id): # update
+            old_quantity = Purchase.objects.get(id=self.id).quantity
+            new_quantity = self.quantity - old_quantity
+        else: # insert
+            new_quantity = self.quantity
+        # Ürün stok bilgi güncelle:
+        product.stock += new_quantity
+        # Ürün kaydet:
+        product.save()
+        return super().save(*args, **kwargs)
+    
+    # delete:
+    def delete(self, *args, **kwargs):
+        # Ürün getir:
+        product = Product.objects.get(id=self.product_id)
+        # Ürün stok bilgi güncelle:
+        product.stock -= self.quantity
+        # Ürün kaydet:
+        product.save()
+        return super().delete(*args, **kwargs)
+    
+
 
 
 class Sale(FixModel):
@@ -71,3 +98,33 @@ class Sale(FixModel):
 
     def __str__(self):
         return f'{self.product} [-{self.quantity}]'
+    
+    # insert/update:
+    def save(self, *args, **kwargs):
+        # Ürün getir:
+        product = Product.objects.get(id=self.product_id)
+        # Miktar yeterli mi?
+        if (product.stock >= self.quantity):
+            if (self.id): # update
+                old_quantity = Sale.objects.get(id=self.id).quantity
+                new_quantity = self.quantity - old_quantity
+            else: # insert
+                new_quantity = self.quantity
+            # Ürün stok bilgi güncelle:
+            product.stock -= new_quantity
+            # Ürün kaydet:
+            product.save()
+            return super().save(*args, **kwargs)
+        else:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(f'Dont have enough stock. Current stock is {product.stock}')
+    
+    # delete:
+    def delete(self, *args, **kwargs):
+        # Ürün getir:
+        product = Product.objects.get(id=self.product_id)
+        # Ürün stok bilgi güncelle:
+        product.stock += self.quantity
+        # Ürün kaydet:
+        product.save()
+        return super().delete(*args, **kwargs)
